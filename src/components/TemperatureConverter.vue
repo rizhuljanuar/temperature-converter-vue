@@ -1,16 +1,24 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
-const title = "Temperature Interactive";
 const celsius = ref(25);
 const history = ref([]);
 
-function getTemperatureClass(temp) {
-  if (temp >= 35) return 'hot';
-  if (temp >= 20) return 'warm';
-  if (temp >= 10) return 'cool';
-  return 'cold';
-}
+const fahrenheit = computed(() => {
+  return (celsius.value * 9/5) + 32;
+})
+
+const kelvin = computed(() => {
+  return celsius.value + 273.15;
+})
+
+const temperatureCategory = computed(() => {
+  if (celsius.value >= 35) return 'Very hot';
+  if (celsius.value >= 30) return 'Hot';
+  if (celsius.value >= 20) return 'Warm';
+  if (celsius.value >= 10) return 'Cool';
+  return 'Cold';
+});
 
 function addToHistory(action) {
   history.value.push({
@@ -20,18 +28,20 @@ function addToHistory(action) {
   });
 }
 
-const tempClass = getTemperatureClass(celsius.value);
+const tempClass = computed(() => {
+  if (celsius.value >= 30) return 'hot';
+  if (celsius.value >= 20) return 'warm';
+  if (celsius.value >= 10) return 'cool';
+  return 'cold';
+});
 
 function increase() {
   celsius.value += 5;
-  const newClass = getTemperatureClass(celsius.value);
-  
   addToHistory('increase');
 }
 
 function decrease() {
   celsius.value -= 5;
-  const newClass = getTemperatureClass(celsius.value);
   addToHistory('decrease');
 }
 
@@ -43,29 +53,49 @@ function reset() {
 
 <template>
   <div class="converter">
-    <h1>{{ title }}</h1>
+    <h1>Temperature Converter</h1>
+    <p class="subtitle">Reactive conversion with Computed Properties</p>
 
-    <p :class="tempClass">{{ celsius }}</p>
+    <div class="temperature-display">
+      <div class="main-temp">
+        <label for="celsius">Celsius (°C)</label>
+        <input 
+          type="text"
+          id="celsius"
+          v-model.number="celsius"
+          class="temp-input"
+        />
+      </div>
 
-    <div class="buttons">
-      <button @click="decrease">Cold -5</button>
-      <button @click="reset">Reset</button>
-      <button @click="increase">Hot +5</button>
-    </div>
+      <div class="conversions">
+        <div class="conversion-item">
+          <span class="unit">Fahrenheit (°F)</span>
+          <span class="value">{{ fahrenheit.toFixed(2) }}</span>
+        </div>
 
-    <div class="info">
-      <p v-if="celsius >= 35">Sangat panas!</p>
-      <p v-else-if="celsius >= 20">Nyaman</p>
-      <p v-else>Dingin!</p>
-    </div>
+        <div class="conversion-item">
+          <span class="unit">Kelvin (K):</span>
+          <span class="value">{{ kelvin.toFixed(2) }}</span>
+        </div>
+      </div>
 
-    <div class="history">
-      <h3>History Perubahan:</h3> 
-      <ul>
-        <li v-for="(item, index) in history" :key="index">
-          {{ item.time }} - {{ item.action }} -> {{ item.temperature }}°C
-        </li>
-      </ul>
+      <div :class="['category', tempClass]">
+        {{ temperatureCategory }}
+      </div>
+
+      <div class="controls">
+        <button @click="decrease()" class="btn-decrease">-5 °C</button>
+        <button @click="reset()" class="btn-reset">Reset</button>
+        <button @click="increase()" class="btn-increase">+5 °C</button>
+      </div>
+      <div class="history">
+        <h3>History Perubahan:</h3> 
+        <ul>
+          <li v-for="(item, index) in history" :key="index">
+            {{ item.time }} - {{ item.action }} -> {{ item.temperature }}°C
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
 </template>
@@ -76,26 +106,123 @@ function reset() {
   border-radius: 10px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  max-width: 500px;
+  max-width: 600px;
   margin: 0 auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 }
 
-.hot {
-  color: #ff6b6b;
-  font-size: 3em;
-  font-weight: bold;
-  text-shadow: 2px 2px rgba(255, 0, 0, 0.3);
-}
-
-.warm {
-  color: #ffa94d;
+h1 {
+  margin: 0 0 10px 0;
   font-size: 2.5em;
+}
+
+.subtitle {
+  margin-bottom: 30px;
+  opacity: 0.9;
+  font-size: 1.1em;
+}
+
+.temperature-display {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 30px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.main-temp {
+  margin-bottom: 30px;
+}
+
+.main-temp label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 1.2em;
   font-weight: bold;
 }
 
-.cool {
-  color: #51cf66;
+.temp-input {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.5em;
+  border: none;
+  border-radius: 8px;
+  text-align: center;
+  background: white;
+  color: #333;
+  font-weight: bold;
+}
+
+.conversions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 30px 0;
+}
+
+.conversion-item {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.conversion-item .unit {
+  display: block;
+  font-size: 0.9em;
+  opacity: 0.8;
+  margin-bottom: 8px;
+}
+
+.conversion-item .value {
+  display: block;
   font-size: 2em;
+  font-weight: bold;
+}
+
+.category {
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 20px 0;
+  transition: all 0.3s ease;
+}
+
+.category.hot {
+  background: #ff6b6b;
+  animation: pulse-hot 2s infinite;
+}
+
+.category.warm {
+  background: #ffa94d;
+}
+
+.category.cool {
+  background: #51cf66;
+}
+
+.category.cold {
+  background: #4ecdc4;
+  animation: shake 2s infinite;
+}
+
+@keyframes pulse-hot {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.controls {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 30px;
 }
 
 .buttons {
